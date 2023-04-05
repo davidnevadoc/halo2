@@ -17,7 +17,7 @@ pub use halo2curves::ff::Field;
 use halo2curves::ff::{BatchInvert, FromUniformBytes, PrimeField, WithSmallOrderMulGroup};
 use halo2curves::group::{Curve, Group};
 
-pub use halo2curves::{CurveAffine, CurveExt};
+pub use halo2curves::{CurveAffine, CurveEndo, CurveExt};
 
 pub const SPARSE_TWIDDLE_DEGREE: u32 = 10;
 
