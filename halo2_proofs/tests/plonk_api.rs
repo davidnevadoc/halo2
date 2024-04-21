@@ -15,7 +15,7 @@ use halo2_proofs::plonk::{
     verify_proof as verify_plonk_proof, Advice, Assigned, Circuit, Column, ConstraintSystem, Error,
     ErrorFront, Fixed, ProvingKey, TableColumn, VerifyingKey,
 };
-use halo2_proofs::poly::commitment::{CommitmentScheme, ParamsProver, Prover, Verifier};
+use halo2_proofs::poly::commitment::{ParamsProver, Prover, Verifier, PCS};
 use halo2_proofs::poly::Rotation;
 use halo2_proofs::poly::VerificationStrategy;
 use halo2_proofs::transcript::{
@@ -455,7 +455,7 @@ fn plonk_api() {
         }};
     }
 
-    fn keygen<Scheme: CommitmentScheme>(params: &Scheme::ParamsProver) -> ProvingKey<Scheme::Curve>
+    fn keygen<Scheme: PCS>(params: &Scheme::ParamsProver) -> ProvingKey<Scheme::Curve>
     where
         Scheme::Scalar: FromUniformBytes<64> + WithSmallOrderMulGroup<3>,
     {
@@ -473,7 +473,7 @@ fn plonk_api() {
 
     fn create_proof_with_engine<
         'params,
-        Scheme: CommitmentScheme,
+        Scheme: PCS,
         P: Prover<'params, Scheme>,
         E: EncodedChallenge<Scheme::Curve>,
         R: RngCore,
@@ -520,7 +520,7 @@ fn plonk_api() {
 
     fn create_proof<
         'params,
-        Scheme: CommitmentScheme,
+        Scheme: PCS,
         P: Prover<'params, Scheme>,
         E: EncodedChallenge<Scheme::Curve>,
         R: RngCore,
@@ -540,7 +540,7 @@ fn plonk_api() {
     fn verify_proof<
         'a,
         'params,
-        Scheme: CommitmentScheme,
+        Scheme: PCS,
         V: Verifier<'params, Scheme>,
         E: EncodedChallenge<Scheme::Curve>,
         T: TranscriptReadBuffer<&'a [u8], Scheme::Curve, E>,
@@ -571,18 +571,18 @@ fn plonk_api() {
     }
 
     fn test_plonk_api_gwc() {
-        use halo2_proofs::poly::kzg::commitment::{KZGCommitmentScheme, ParamsKZG};
+        use halo2_proofs::poly::kzg::commitment::{KZGParams, KZG};
         use halo2_proofs::poly::kzg::multiopen::{ProverGWC, VerifierGWC};
         use halo2_proofs::poly::kzg::strategy::AccumulatorStrategy;
         use halo2curves::bn256::Bn256;
 
-        type Scheme = KZGCommitmentScheme<Bn256>;
+        type Scheme = KZG<Bn256>;
         bad_keys!(Scheme);
 
-        let params = ParamsKZG::<Bn256>::new(K);
+        let params = KZGParams::<Bn256>::new(K);
         let rng = OsRng;
 
-        let pk = keygen::<KZGCommitmentScheme<_>>(&params);
+        let pk = keygen::<KZG<_>>(&params);
 
         let proof = create_proof::<_, ProverGWC<_>, _, _, Blake2bWrite<_, _, Challenge255<_>>>(
             rng, &params, &pk,
@@ -600,18 +600,18 @@ fn plonk_api() {
     }
 
     fn test_plonk_api_shplonk() {
-        use halo2_proofs::poly::kzg::commitment::{KZGCommitmentScheme, ParamsKZG};
+        use halo2_proofs::poly::kzg::commitment::{KZGParams, KZG};
         use halo2_proofs::poly::kzg::multiopen::{ProverSHPLONK, VerifierSHPLONK};
         use halo2_proofs::poly::kzg::strategy::AccumulatorStrategy;
         use halo2curves::bn256::Bn256;
 
-        type Scheme = KZGCommitmentScheme<Bn256>;
+        type Scheme = KZG<Bn256>;
         bad_keys!(Scheme);
 
-        let params = ParamsKZG::<Bn256>::new(K);
+        let params = KZGParams::<Bn256>::new(K);
         let rng = OsRng;
 
-        let pk = keygen::<KZGCommitmentScheme<_>>(&params);
+        let pk = keygen::<KZG<_>>(&params);
 
         let proof = create_proof::<_, ProverSHPLONK<_>, _, _, Blake2bWrite<_, _, Challenge255<_>>>(
             rng, &params, &pk,

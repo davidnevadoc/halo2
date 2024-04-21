@@ -1,5 +1,5 @@
 use crate::plonk::{Error, ErrorBack};
-use crate::poly::commitment::{self, CommitmentScheme, Params};
+use crate::poly::commitment::{self, PCSParams, PCS};
 use crate::transcript::{EncodedChallenge, TranscriptWrite};
 use halo2_backend::plonk::{prover::Prover, ProvingKey};
 use halo2_frontend::circuit::{compile_circuit_cs, WitnessCalculator};
@@ -18,7 +18,7 @@ use std::collections::HashMap;
 /// are zero-padded internally.
 pub fn create_proof_with_engine<
     'params,
-    Scheme: CommitmentScheme,
+    Scheme: PCS,
     P: commitment::Prover<'params, Scheme>,
     E: EncodedChallenge<Scheme::Curve>,
     R: RngCore,
@@ -48,7 +48,7 @@ where
 /// are zero-padded internally.
 pub fn create_proof<
     'params,
-    Scheme: CommitmentScheme,
+    Scheme: PCS,
     P: commitment::Prover<'params, Scheme>,
     E: EncodedChallenge<Scheme::Curve>,
     R: RngCore,
@@ -79,7 +79,7 @@ where
 #[allow(clippy::too_many_arguments)]
 pub fn create_proof_custom_with_engine<
     'params,
-    Scheme: CommitmentScheme,
+    Scheme: PCS,
     P: commitment::Prover<'params, Scheme>,
     E: EncodedChallenge<Scheme::Curve>,
     R: RngCore,
@@ -133,7 +133,7 @@ fn test_create_proof() {
         circuit::SimpleFloorPlanner,
         plonk::{keygen_pk, keygen_vk, ConstraintSystem, ErrorFront},
         poly::kzg::{
-            commitment::{KZGCommitmentScheme, ParamsKZG},
+            commitment::{KZGParams, KZG},
             multiopen::ProverSHPLONK,
         },
         transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer},
@@ -166,13 +166,13 @@ fn test_create_proof() {
         }
     }
 
-    let params: ParamsKZG<Bn256> = ParamsKZG::setup(3, OsRng);
+    let params: KZGParams<Bn256> = KZGParams::setup(3, OsRng);
     let vk = keygen_vk(&params, &MyCircuit).expect("keygen_vk should not fail");
     let pk = keygen_pk(&params, vk, &MyCircuit).expect("keygen_pk should not fail");
     let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
 
     // Create proof with wrong number of instances
-    let proof = create_proof::<KZGCommitmentScheme<_>, ProverSHPLONK<_>, _, _, _, _>(
+    let proof = create_proof::<KZG<_>, ProverSHPLONK<_>, _, _, _, _>(
         &params,
         &pk,
         &[MyCircuit, MyCircuit],
@@ -186,7 +186,7 @@ fn test_create_proof() {
     ));
 
     // Create proof with correct number of instances
-    create_proof::<KZGCommitmentScheme<_>, ProverSHPLONK<_>, _, _, _, _>(
+    create_proof::<KZG<_>, ProverSHPLONK<_>, _, _, _, _>(
         &params,
         &pk,
         &[MyCircuit, MyCircuit],
@@ -203,7 +203,7 @@ fn test_create_proof_custom() {
         circuit::SimpleFloorPlanner,
         plonk::{keygen_pk_custom, keygen_vk_custom, ConstraintSystem, ErrorFront},
         poly::kzg::{
-            commitment::{KZGCommitmentScheme, ParamsKZG},
+            commitment::{KZGParams, KZG},
             multiopen::ProverSHPLONK,
         },
         transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer},
@@ -236,7 +236,7 @@ fn test_create_proof_custom() {
         }
     }
 
-    let params: ParamsKZG<Bn256> = ParamsKZG::setup(3, OsRng);
+    let params: KZGParams<Bn256> = KZGParams::setup(3, OsRng);
     let compress_selectors = true;
     let vk = keygen_vk_custom(&params, &MyCircuit, compress_selectors)
         .expect("keygen_vk_custom should not fail");
@@ -245,7 +245,7 @@ fn test_create_proof_custom() {
     let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
     let engine = PlonkEngineConfig::build_default();
 
-    create_proof_custom_with_engine::<KZGCommitmentScheme<_>, ProverSHPLONK<_>, _, _, _, _, _>(
+    create_proof_custom_with_engine::<KZG<_>, ProverSHPLONK<_>, _, _, _, _, _>(
         engine,
         &params,
         &pk,

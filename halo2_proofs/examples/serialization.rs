@@ -12,7 +12,7 @@ use halo2_proofs::{
     },
     poly::{
         kzg::{
-            commitment::{KZGCommitmentScheme, ParamsKZG},
+            commitment::{KZGParams, KZG},
             multiopen::{ProverGWC, VerifierGWC},
             strategy::SingleStrategy,
         },
@@ -131,7 +131,7 @@ impl Circuit<Fr> for StandardPlonk {
 fn main() {
     let k = 4;
     let circuit = StandardPlonk(Fr::random(OsRng));
-    let params = ParamsKZG::<Bn256>::setup(k, OsRng);
+    let params = KZGParams::<Bn256>::setup(k, OsRng);
     let compress_selectors = true;
     let vk = keygen_vk_custom(&params, &circuit, compress_selectors).expect("vk should not fail");
     let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
@@ -158,7 +158,7 @@ fn main() {
     let instances: &[&[Fr]] = &[&[circuit.0]];
     let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
     create_proof::<
-        KZGCommitmentScheme<Bn256>,
+        KZG<Bn256>,
         ProverGWC<'_, Bn256>,
         Challenge255<G1Affine>,
         _,
@@ -178,7 +178,7 @@ fn main() {
     let strategy = SingleStrategy::new(&params);
     let mut transcript = Blake2bRead::<_, _, Challenge255<_>>::init(&proof[..]);
     assert!(verify_proof::<
-        KZGCommitmentScheme<Bn256>,
+        KZG<Bn256>,
         VerifierGWC<'_, Bn256>,
         Challenge255<G1Affine>,
         Blake2bRead<&[u8], G1Affine, Challenge255<G1Affine>>,

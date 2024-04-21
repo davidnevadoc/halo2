@@ -467,7 +467,7 @@ impl<F: Field + From<u64>, const WIDTH_FACTOR: usize> Circuit<F> for MyCircuit<F
     }
 }
 
-use halo2_proofs::poly::kzg::commitment::{KZGCommitmentScheme, ParamsKZG};
+use halo2_proofs::poly::kzg::commitment::{KZGParams, KZG};
 use halo2_proofs::poly::kzg::multiopen::{ProverSHPLONK, VerifierSHPLONK};
 use halo2_proofs::poly::kzg::strategy::SingleStrategy;
 use halo2curves::bn256::{Bn256, Fr, G1Affine};
@@ -517,7 +517,7 @@ fn test_mycircuit_full_legacy() {
 
     // Setup
     let mut rng = BlockRng::new(OneNg {});
-    let params = ParamsKZG::<Bn256>::setup(k, &mut rng);
+    let params = KZGParams::<Bn256>::setup(k, &mut rng);
     let verifier_params = params.verifier_params();
     let start = Instant::now();
     let vk = keygen_vk_legacy(&params, &circuit).expect("keygen_vk should not fail");
@@ -533,7 +533,7 @@ fn test_mycircuit_full_legacy() {
 
     let start = Instant::now();
     let mut transcript = Blake2bWrite::<_, G1Affine, Challenge255<_>>::init(vec![]);
-    create_proof::<KZGCommitmentScheme<Bn256>, ProverSHPLONK<'_, Bn256>, _, _, _, _>(
+    create_proof::<KZG<Bn256>, ProverSHPLONK<'_, Bn256>, _, _, _, _>(
         &params,
         &pk,
         &[circuit],
@@ -551,7 +551,7 @@ fn test_mycircuit_full_legacy() {
         Blake2bRead::<_, G1Affine, Challenge255<_>>::init(proof.as_slice());
     let strategy = SingleStrategy::new(verifier_params);
 
-    verify_proof::<KZGCommitmentScheme<Bn256>, VerifierSHPLONK<'_, Bn256>, _, _, _>(
+    verify_proof::<KZG<Bn256>, VerifierSHPLONK<'_, Bn256>, _, _, _>(
         &params,
         &vk,
         strategy,
@@ -579,7 +579,7 @@ fn test_mycircuit_full_split() {
 
     // Setup
     let mut rng = BlockRng::new(OneNg {});
-    let params = ParamsKZG::<Bn256>::setup(k, &mut rng);
+    let params = KZGParams::<Bn256>::setup(k, &mut rng);
     let verifier_params = params.verifier_params();
     let start = Instant::now();
     let vk = keygen_vk(&params, &compiled_circuit).expect("keygen_vk should not fail");
@@ -598,22 +598,16 @@ fn test_mycircuit_full_split() {
     let start = Instant::now();
     let mut witness_calc = WitnessCalculator::new(k, &circuit, &config, &cs, instances_slice);
     let mut transcript = Blake2bWrite::<_, G1Affine, Challenge255<_>>::init(vec![]);
-    let mut prover = ProverSingle::<
-        KZGCommitmentScheme<Bn256>,
-        ProverSHPLONK<'_, Bn256>,
-        _,
-        _,
-        _,
-        _,
-    >::new_with_engine(
-        engine,
-        &params,
-        &pk,
-        instances_slice,
-        &mut rng,
-        &mut transcript,
-    )
-    .unwrap();
+    let mut prover =
+        ProverSingle::<KZG<Bn256>, ProverSHPLONK<'_, Bn256>, _, _, _, _>::new_with_engine(
+            engine,
+            &params,
+            &pk,
+            instances_slice,
+            &mut rng,
+            &mut transcript,
+        )
+        .unwrap();
     let mut challenges = HashMap::new();
     for phase in 0..cs.phases().count() {
         println!("phase {phase}");
@@ -631,7 +625,7 @@ fn test_mycircuit_full_split() {
         Blake2bRead::<_, G1Affine, Challenge255<_>>::init(proof.as_slice());
     let strategy = SingleStrategy::new(verifier_params);
 
-    verify_proof_single::<KZGCommitmentScheme<Bn256>, VerifierSHPLONK<'_, Bn256>, _, _, _>(
+    verify_proof_single::<KZG<Bn256>, VerifierSHPLONK<'_, Bn256>, _, _, _>(
         &params,
         &vk,
         strategy,
