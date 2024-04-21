@@ -1,5 +1,5 @@
 use super::{
-    commitment::{KZGCommitmentScheme, ParamsKZG},
+    commitment::{KZGParams, KZG},
     msm::DualMSM,
 };
 use crate::{
@@ -30,7 +30,7 @@ where
 }
 
 /// Define accumulator type as `DualMSM`
-impl<'params, E> Guard<KZGCommitmentScheme<E>> for GuardKZG<'params, E>
+impl<'params, E> Guard<KZG<E>> for GuardKZG<'params, E>
 where
     E: MultiMillerLoop + Debug,
     E::G1Affine: SerdeCurveAffine<ScalarExt = <E as Engine>::Fr, CurveExt = <E as Engine>::G1>,
@@ -67,7 +67,7 @@ where
     E::G1: CurveExt<AffineExt = E::G1Affine>,
 {
     /// Constructs an empty batch verifier
-    pub fn new(params: &'params ParamsKZG<E>) -> Self {
+    pub fn new(params: &'params KZGParams<E>) -> Self {
         AccumulatorStrategy {
             msm_accumulator: DualMSM::new(params),
         }
@@ -95,7 +95,7 @@ where
     E::G1: CurveExt<AffineExt = E::G1Affine>,
 {
     /// Constructs an empty batch verifier
-    pub fn new(params: &'params ParamsKZG<E>) -> Self {
+    pub fn new(params: &'params KZGParams<E>) -> Self {
         SingleStrategy {
             msm: DualMSM::new(params),
         }
@@ -107,11 +107,11 @@ impl<
         E: MultiMillerLoop + Debug,
         V: Verifier<
             'params,
-            KZGCommitmentScheme<E>,
+            KZG<E>,
             MSMAccumulator = DualMSM<'params, E>,
             Guard = GuardKZG<'params, E>,
         >,
-    > VerificationStrategy<'params, KZGCommitmentScheme<E>, V> for AccumulatorStrategy<'params, E>
+    > VerificationStrategy<'params, KZG<E>, V> for AccumulatorStrategy<'params, E>
 where
     E::G1Affine: SerdeCurveAffine<ScalarExt = <E as Engine>::Fr, CurveExt = <E as Engine>::G1>,
     E::G1: CurveExt<AffineExt = E::G1Affine>,
@@ -119,7 +119,7 @@ where
 {
     type Output = Self;
 
-    fn new(params: &'params ParamsKZG<E>) -> Self {
+    fn new(params: &'params KZGParams<E>) -> Self {
         AccumulatorStrategy::new(params)
     }
 
@@ -148,11 +148,11 @@ impl<
         E: MultiMillerLoop + Debug,
         V: Verifier<
             'params,
-            KZGCommitmentScheme<E>,
+            KZG<E>,
             MSMAccumulator = DualMSM<'params, E>,
             Guard = GuardKZG<'params, E>,
         >,
-    > VerificationStrategy<'params, KZGCommitmentScheme<E>, V> for SingleStrategy<'params, E>
+    > VerificationStrategy<'params, KZG<E>, V> for SingleStrategy<'params, E>
 where
     E::G1Affine: SerdeCurveAffine<ScalarExt = <E as Engine>::Fr, CurveExt = <E as Engine>::G1>,
     E::G1: CurveExt<AffineExt = E::G1Affine>,
@@ -160,7 +160,7 @@ where
 {
     type Output = ();
 
-    fn new(params: &'params ParamsKZG<E>) -> Self {
+    fn new(params: &'params KZGParams<E>) -> Self {
         Self::new(params)
     }
 

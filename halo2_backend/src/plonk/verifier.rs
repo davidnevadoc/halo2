@@ -15,7 +15,7 @@ use crate::plonk::{
     ChallengeTheta, ChallengeX, ChallengeY, Error,
 };
 use crate::poly::{
-    commitment::{Blind, CommitmentScheme, Params, Verifier},
+    commitment::{Blind, PCSParams, Verifier, PCS},
     VerificationStrategy, VerifierQuery,
 };
 use crate::transcript::{read_n_scalars, EncodedChallenge, TranscriptRead};
@@ -29,7 +29,7 @@ pub use batch::BatchVerifier;
 /// batched).
 pub fn verify_proof_single<
     'params,
-    Scheme: CommitmentScheme,
+    Scheme: PCS,
     V: Verifier<'params, Scheme>,
     E: EncodedChallenge<Scheme::Curve>,
     T: TranscriptRead<Scheme::Curve, E>,
@@ -50,7 +50,7 @@ where
 /// Returns a boolean indicating whether or not the proof is valid
 pub fn verify_proof<
     'params,
-    Scheme: CommitmentScheme,
+    Scheme: PCS,
     V: Verifier<'params, Scheme>,
     E: EncodedChallenge<Scheme::Curve>,
     T: TranscriptRead<Scheme::Curve, E>,

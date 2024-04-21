@@ -7,7 +7,7 @@ use crate::arithmetic::{
 };
 use crate::helpers::SerdeCurveAffine;
 use crate::poly::commitment::{Blind, ParamsProver, Prover};
-use crate::poly::kzg::commitment::{KZGCommitmentScheme, ParamsKZG};
+use crate::poly::kzg::commitment::{KZGParams, KZG};
 use crate::poly::query::{PolynomialPointer, ProverQuery};
 use crate::poly::{Coeff, Polynomial};
 use crate::transcript::{EncodedChallenge, TranscriptWrite};
@@ -92,19 +92,18 @@ impl<'a, C: CurveAffine> RotationSet<C::Scalar, PolynomialPointer<'a, C>> {
 /// Concrete KZG prover with SHPLONK variant
 #[derive(Debug)]
 pub struct ProverSHPLONK<'a, E: Engine> {
-    params: &'a ParamsKZG<E>,
+    params: &'a KZGParams<E>,
 }
 
 impl<'a, E: Engine> ProverSHPLONK<'a, E> {
     /// Given parameters creates new prover instance
-    pub fn new(params: &'a ParamsKZG<E>) -> Self {
+    pub fn new(params: &'a KZGParams<E>) -> Self {
         Self { params }
     }
 }
 
 /// Create a multi-opening proof
-impl<'params, E: Engine + Debug> Prover<'params, KZGCommitmentScheme<E>>
-    for ProverSHPLONK<'params, E>
+impl<'params, E: Engine + Debug> Prover<'params, KZG<E>> for ProverSHPLONK<'params, E>
 where
     E::Fr: Ord,
     E::G1Affine: SerdeCurveAffine<ScalarExt = <E as Engine>::Fr, CurveExt = <E as Engine>::G1>,
@@ -113,7 +112,7 @@ where
 {
     const QUERY_INSTANCE: bool = false;
 
-    fn new(params: &'params ParamsKZG<E>) -> Self {
+    fn new(params: &'params KZGParams<E>) -> Self {
         Self { params }
     }
 

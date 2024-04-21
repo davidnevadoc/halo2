@@ -12,7 +12,7 @@ use crate::{
     },
     plonk::VerifyingKey,
     poly::{
-        commitment::{Params, MSM},
+        commitment::{PCSParams, MSM},
         ipa::{
             commitment::{IPACommitmentScheme, ParamsVerifierIPA},
             msm::MSMIPA,

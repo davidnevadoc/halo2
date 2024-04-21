@@ -5,7 +5,7 @@ mod test {
     use crate::poly::commitment::Blind;
     use crate::poly::commitment::ParamsProver;
     use crate::poly::{
-        commitment::{CommitmentScheme, Params, Prover, Verifier},
+        commitment::{PCSParams, Prover, Verifier, PCS},
         query::{ProverQuery, VerifierQuery},
         strategy::VerificationStrategy,
         EvaluationDomain,
@@ -97,7 +97,7 @@ mod test {
 
     #[test]
     fn test_roundtrip_gwc() {
-        use crate::poly::kzg::commitment::{KZGCommitmentScheme, ParamsKZG};
+        use crate::poly::kzg::commitment::{KZGParams, KZG};
         use crate::poly::kzg::multiopen::{ProverGWC, VerifierGWC};
         use crate::poly::kzg::strategy::AccumulatorStrategy;
         use halo2curves::bn256::Bn256;
@@ -105,7 +105,7 @@ mod test {
         const K: u32 = 4;
 
         let engine = H2cEngine::new();
-        let params = ParamsKZG::<Bn256>::new(K);
+        let params = KZGParams::<Bn256>::new(K);
 
         let proof = create_proof::<_, ProverGWC<_>, _, Blake2bWrite<_, _, Challenge255<_>>>(
             &engine, &params,
@@ -120,7 +120,7 @@ mod test {
         );
 
         verify::<
-            KZGCommitmentScheme<Bn256>,
+            KZG<Bn256>,
             VerifierGWC<_>,
             _,
             Blake2bRead<_, _, Challenge255<_>>,
@@ -130,7 +130,7 @@ mod test {
 
     #[test]
     fn test_roundtrip_shplonk() {
-        use crate::poly::kzg::commitment::{KZGCommitmentScheme, ParamsKZG};
+        use crate::poly::kzg::commitment::{KZGParams, KZG};
         use crate::poly::kzg::multiopen::{ProverSHPLONK, VerifierSHPLONK};
         use crate::poly::kzg::strategy::AccumulatorStrategy;
         use halo2curves::bn256::Bn256;
@@ -138,19 +138,17 @@ mod test {
         const K: u32 = 4;
 
         let engine = H2cEngine::new();
-        let params = ParamsKZG::<Bn256>::new(K);
+        let params = KZGParams::<Bn256>::new(K);
 
-        let proof = create_proof::<
-            KZGCommitmentScheme<Bn256>,
-            ProverSHPLONK<_>,
-            _,
-            Blake2bWrite<_, _, Challenge255<_>>,
-        >(&engine, &params);
+        let proof =
+            create_proof::<KZG<Bn256>, ProverSHPLONK<_>, _, Blake2bWrite<_, _, Challenge255<_>>>(
+                &engine, &params,
+            );
 
         let verifier_params = params.verifier_params();
 
         verify::<
-            KZGCommitmentScheme<Bn256>,
+            KZG<Bn256>,
             VerifierSHPLONK<_>,
             _,
             Blake2bRead<_, _, Challenge255<_>>,
@@ -158,7 +156,7 @@ mod test {
         >(verifier_params, &proof[..], false);
 
         verify::<
-            KZGCommitmentScheme<Bn256>,
+            KZG<Bn256>,
             VerifierSHPLONK<_>,
             _,
             Blake2bRead<_, _, Challenge255<_>>,
@@ -169,7 +167,7 @@ mod test {
     fn verify<
         'a,
         'params,
-        Scheme: CommitmentScheme,
+        Scheme: PCS,
         V: Verifier<'params, Scheme>,
         E: EncodedChallenge<Scheme::Curve>,
         T: TranscriptReadBuffer<&'a [u8], Scheme::Curve, E>,
@@ -226,7 +224,7 @@ mod test {
 
     fn create_proof<
         'params,
-        Scheme: CommitmentScheme,
+        Scheme: PCS,
         P: Prover<'params, Scheme>,
         E: EncodedChallenge<Scheme::Curve>,
         T: TranscriptWriterBuffer<Vec<u8>, Scheme::Curve, E>,
@@ -241,17 +239,17 @@ mod test {
 
         let mut ax = domain.empty_coeff();
         for (i, a) in ax.iter_mut().enumerate() {
-            *a = <<Scheme as CommitmentScheme>::Scalar>::from(10 + i as u64);
+            *a = <<Scheme as PCS>::Scalar>::from(10 + i as u64);
         }
 
         let mut bx = domain.empty_coeff();
         for (i, a) in bx.iter_mut().enumerate() {
-            *a = <<Scheme as CommitmentScheme>::Scalar>::from(100 + i as u64);
+            *a = <<Scheme as PCS>::Scalar>::from(100 + i as u64);
         }
 
         let mut cx = domain.empty_coeff();
         for (i, a) in cx.iter_mut().enumerate() {
-            *a = <<Scheme as CommitmentScheme>::Scalar>::from(100 + i as u64);
+            *a = <<Scheme as PCS>::Scalar>::from(100 + i as u64);
         }
 
         let mut transcript = T::init(vec![]);

@@ -6,7 +6,7 @@ use crate::{
     plonk::circuit::ExpressionBack,
     plonk::{ChallengeBeta, ChallengeGamma, ChallengeTheta, ChallengeX, Error},
     poly::{
-        commitment::{Blind, Params},
+        commitment::{Blind, PCSParams},
         Coeff, EvaluationDomain, LagrangeCoeff, Polynomial, ProverQuery,
     },
     transcript::{EncodedChallenge, TranscriptWrite},
@@ -66,7 +66,7 @@ pub(in crate::plonk) fn lookup_commit_permuted<
     'params: 'a,
     F: WithSmallOrderMulGroup<3>,
     C,
-    P: Params<'params, C>,
+    P: PCSParams<'params, C>,
     E: EncodedChallenge<C>,
     R: RngCore,
     T: TranscriptWrite<C, E>,
@@ -171,7 +171,7 @@ impl<C: CurveAffine> Permuted<C> {
     #[allow(clippy::too_many_arguments)]
     pub(in crate::plonk) fn commit_product<
         'params,
-        P: Params<'params, C>,
+        P: PCSParams<'params, C>,
         E: EncodedChallenge<C>,
         R: RngCore,
         T: TranscriptWrite<C, E>,
@@ -397,7 +397,7 @@ type ExpressionPair<F> = (Polynomial<F, LagrangeCoeff>, Polynomial<F, LagrangeCo
 /// - the first row in a sequence of like values in A' is the row
 ///   that has the corresponding value in S'.
 /// This method returns (A', S') if no errors are encountered.
-fn permute_expression_pair<'params, C: CurveAffine, P: Params<'params, C>, R: RngCore>(
+fn permute_expression_pair<'params, C: CurveAffine, P: PCSParams<'params, C>, R: RngCore>(
     pk: &ProvingKey<C>,
     params: &P,
     domain: &EvaluationDomain<C::Scalar>,

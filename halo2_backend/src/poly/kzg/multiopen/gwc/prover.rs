@@ -3,7 +3,7 @@ use crate::arithmetic::{kate_division, powers};
 use crate::helpers::SerdeCurveAffine;
 use crate::poly::commitment::ParamsProver;
 use crate::poly::commitment::Prover;
-use crate::poly::kzg::commitment::{KZGCommitmentScheme, ParamsKZG};
+use crate::poly::kzg::commitment::{KZGParams, KZG};
 use crate::poly::query::ProverQuery;
 use crate::poly::{commitment::Blind, Polynomial};
 use crate::transcript::{EncodedChallenge, TranscriptWrite};
@@ -20,11 +20,11 @@ use std::marker::PhantomData;
 /// Concrete KZG prover with GWC variant
 #[derive(Debug)]
 pub struct ProverGWC<'params, E: Engine> {
-    params: &'params ParamsKZG<E>,
+    params: &'params KZGParams<E>,
 }
 
 /// Create a multi-opening proof
-impl<'params, E: Engine + Debug> Prover<'params, KZGCommitmentScheme<E>> for ProverGWC<'params, E>
+impl<'params, E: Engine + Debug> Prover<'params, KZG<E>> for ProverGWC<'params, E>
 where
     E::G1Affine: SerdeCurveAffine<ScalarExt = <E as Engine>::Fr, CurveExt = <E as Engine>::G1>,
     E::G1: CurveExt<AffineExt = E::G1Affine>,
@@ -32,7 +32,7 @@ where
 {
     const QUERY_INSTANCE: bool = false;
 
-    fn new(params: &'params ParamsKZG<E>) -> Self {
+    fn new(params: &'params KZGParams<E>) -> Self {
         Self { params }
     }
 

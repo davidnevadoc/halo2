@@ -8,7 +8,7 @@ use crate::arithmetic::{
 use crate::helpers::SerdeCurveAffine;
 use crate::poly::commitment::Verifier;
 use crate::poly::commitment::MSM;
-use crate::poly::kzg::commitment::{KZGCommitmentScheme, ParamsKZG};
+use crate::poly::kzg::commitment::{KZGParams, KZG};
 use crate::poly::kzg::msm::DualMSM;
 use crate::poly::kzg::msm::{PreMSM, MSMKZG};
 use crate::poly::kzg::strategy::GuardKZG;
@@ -23,10 +23,10 @@ use std::ops::MulAssign;
 /// Concrete KZG multiopen verifier with SHPLONK variant
 #[derive(Debug)]
 pub struct VerifierSHPLONK<'params, E: Engine> {
-    params: &'params ParamsKZG<E>,
+    params: &'params KZGParams<E>,
 }
 
-impl<'params, E> Verifier<'params, KZGCommitmentScheme<E>> for VerifierSHPLONK<'params, E>
+impl<'params, E> Verifier<'params, KZG<E>> for VerifierSHPLONK<'params, E>
 where
     E: MultiMillerLoop + Debug,
     E::Fr: Ord,
@@ -39,7 +39,7 @@ where
 
     const QUERY_INSTANCE: bool = false;
 
-    fn new(params: &'params ParamsKZG<E>) -> Self {
+    fn new(params: &'params KZGParams<E>) -> Self {
         Self { params }
     }
 

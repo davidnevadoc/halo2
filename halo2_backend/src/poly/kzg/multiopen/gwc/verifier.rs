@@ -5,7 +5,7 @@ use crate::arithmetic::powers;
 use crate::helpers::SerdeCurveAffine;
 use crate::poly::commitment::Verifier;
 use crate::poly::commitment::MSM;
-use crate::poly::kzg::commitment::{KZGCommitmentScheme, ParamsKZG};
+use crate::poly::kzg::commitment::{KZGParams, KZG};
 use crate::poly::kzg::msm::{DualMSM, MSMKZG};
 use crate::poly::kzg::strategy::GuardKZG;
 use crate::poly::query::Query;
@@ -20,10 +20,10 @@ use halo2curves::CurveExt;
 #[derive(Debug)]
 /// Concrete KZG verifier with GWC variant
 pub struct VerifierGWC<'params, E: Engine> {
-    params: &'params ParamsKZG<E>,
+    params: &'params KZGParams<E>,
 }
 
-impl<'params, E> Verifier<'params, KZGCommitmentScheme<E>> for VerifierGWC<'params, E>
+impl<'params, E> Verifier<'params, KZG<E>> for VerifierGWC<'params, E>
 where
     E: MultiMillerLoop + Debug,
     E::G1Affine: SerdeCurveAffine<ScalarExt = <E as Engine>::Fr, CurveExt = <E as Engine>::G1>,
@@ -35,7 +35,7 @@ where
 
     const QUERY_INSTANCE: bool = false;
 
-    fn new(params: &'params ParamsKZG<E>) -> Self {
+    fn new(params: &'params KZGParams<E>) -> Self {
         Self { params }
     }
 

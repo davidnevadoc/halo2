@@ -17,7 +17,7 @@ use crate::{
     },
     plonk::Error,
     poly::{
-        commitment::{Blind, Params},
+        commitment::{Blind, PCSParams},
         EvaluationDomain,
     },
 };
@@ -46,7 +46,7 @@ pub fn keygen_vk<'params, C, P>(
 ) -> Result<VerifyingKey<C>, Error>
 where
     C: CurveAffine,
-    P: Params<'params, C>,
+    P: PCSParams<'params, C>,
     C::Scalar: FromUniformBytes<64>,
 {
     let cs_mid = &circuit.cs;
@@ -95,7 +95,7 @@ pub fn keygen_pk<'params, C, P>(
 ) -> Result<ProvingKey<C>, Error>
 where
     C: CurveAffine,
-    P: Params<'params, C>,
+    P: PCSParams<'params, C>,
 {
     let cs = &circuit.cs;
 

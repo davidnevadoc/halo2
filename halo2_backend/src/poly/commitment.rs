@@ -16,34 +16,54 @@ use std::{
 };
 
 /// Defines components of a commitment scheme.
-pub trait CommitmentScheme {
+pub trait PCS<'params> {
     /// Application field of this commitment scheme
     type Scalar: Field;
 
     /// Elliptic curve used to commit the application and witnesses
     type Curve: CurveAffine<ScalarExt = Self::Scalar>;
 
-    /// Constant prover parameters
-    type ParamsProver: for<'params> ParamsProver<
-        'params,
-        Self::Curve,
-        ParamsVerifier = Self::ParamsVerifier,
-    >;
+    type Params: PCSParams<'params, Self::Curve>;
+    type ProverParams: Clone + Debug;
+    type VerifierParams: Clone + Debug;
 
-    /// Constant verifier parameters
-    type ParamsVerifier: for<'params> ParamsVerifier<'params, Self::Curve>;
+    type Commitment: Clone + Debug;
 
     /// Wrapper for parameter generator
-    fn new_params(k: u32) -> Self::ParamsProver;
+    fn setup(k: u32, rng: impl RngCore) -> Result<Self::Params, Error>;
 
     /// Wrapper for parameter reader
-    fn read_params<R: io::Read>(reader: &mut R) -> io::Result<Self::ParamsProver>;
+    fn read_params<R: io::Read>(reader: &mut R) -> io::Result<Self::Params, Error>;
+    /// Downsize `Params` with smaller `k`.
+    fn downsize(&mut self, k: u32);
+
+    /// Generates an empty multiscalar multiplication struct using the
+    /// appropriate params.
+    fn empty_msm(&'params self) -> Self::MSM;
+
+    fn commit(
+        pp: &Self::ProverParams,
+        engine: &impl MsmAccel<Self::Curve>,
+        poly: &Polynomial<Self::Scalar, Coeff>,
+    ) -> Result<Self::Commitment, Error>;
+
+    fn commit_lagrange(
+        pp: &Self::ProverParams,
+        engine: &impl MsmAccel<Self::C>,
+        poly: &Polynomial<Self::Scalar, LagrangeCoeff>,
+    ) -> Result<Self::Commitment, Error>;
+
+    // fn open();
+    // fn verify;
 }
 
 /// Parameters for circuit synthesis and prover parameters.
-pub trait Params<'params, C: CurveAffine>: Sized + Clone + Debug {
+pub trait PCSParams<'params, C: CurveAffine>: Sized + Clone + Debug {
     /// Multiscalar multiplication engine
     type MSM: MSM<C> + 'params;
+
+    type ProverParams: Clone + Debug;
+    type VerifierParams: Clone + Debug;
 
     /// Logarithmic size of the circuit
     fn k(&self) -> u32;
@@ -62,7 +82,7 @@ pub trait Params<'params, C: CurveAffine>: Sized + Clone + Debug {
     /// evaluation domain. The commitment will be blinded by the blinding factor
     /// `r`.
     fn commit_lagrange(
-        &self,
+        pp: &Self::ProverParams,
         engine: &impl MsmAccel<C>,
         poly: &Polynomial<C::ScalarExt, LagrangeCoeff>,
         r: Blind<C::ScalarExt>,
@@ -75,33 +95,34 @@ pub trait Params<'params, C: CurveAffine>: Sized + Clone + Debug {
     fn read<R: io::Read>(reader: &mut R) -> io::Result<Self>;
 }
 
+// TODO Remove this trait
 /// Parameters for circuit synthesis and prover parameters.
-pub trait ParamsProver<'params, C: CurveAffine>: Params<'params, C> {
-    /// Constant verifier parameters.
-    type ParamsVerifier: ParamsVerifier<'params, C>;
+// pub trait ParamsProver<'params, C: CurveAffine>: PCSParams<'params, C> {
+//     /// Constant verifier parameters.
+//     type ParamsVerifier: ParamsVerifier<'params, C>;
 
-    /// Returns new instance of parameters
-    fn new(k: u32) -> Self;
+//     /// Returns new instance of parameters
+//     fn new(k: u32) -> Self;
 
-    /// This computes a commitment to a polynomial described by the provided
-    /// slice of coefficients. The commitment may be blinded by the blinding
-    /// factor `r`.
-    fn commit(
-        &self,
-        engine: &impl MsmAccel<C>,
-        poly: &Polynomial<C::ScalarExt, Coeff>,
-        r: Blind<C::ScalarExt>,
-    ) -> C::CurveExt;
+//     /// This computes a commitment to a polynomial described by the provided
+//     /// slice of coefficients. The commitment may be blinded by the blinding
+//     /// factor `r`.
+//     fn commit(
+//         &self,
+//         engine: &impl MsmAccel<C>,
+//         poly: &Polynomial<C::ScalarExt, Coeff>,
+//         r: Blind<C::ScalarExt>,
+//     ) -> C::CurveExt;
 
-    /// Getter for g generators
-    fn get_g(&self) -> &[C];
+//     /// Getter for g generators
+//     fn get_g(&self) -> &[C];
 
-    /// Returns verification parameters.
-    fn verifier_params(&'params self) -> &'params Self::ParamsVerifier;
-}
+//     /// Returns verification parameters.
+//     fn verifier_params(&'params self) -> &'params Self::ParamsVerifier;
+// }
 
 /// Verifier specific functionality with circuit constraints
-pub trait ParamsVerifier<'params, C: CurveAffine>: Params<'params, C> {}
+// pub trait ParamsVerifier<'params, C: CurveAffine>: PCSParams<'params, C> {}
 
 /// Multiscalar multiplication engine
 pub trait MSM<C: CurveAffine>: Clone + Debug + Send + Sync {
@@ -130,7 +151,7 @@ pub trait MSM<C: CurveAffine>: Clone + Debug + Send + Sync {
 }
 
 /// Common multi-open prover interface for various commitment schemes
-pub trait Prover<'params, Scheme: CommitmentScheme> {
+pub trait Prover<'params, Scheme: PCS> {
     /// Query instance or not
     const QUERY_INSTANCE: bool;
 
@@ -178,7 +199,7 @@ pub trait Prover<'params, Scheme: CommitmentScheme> {
 }
 
 /// Common multi-open verifier interface for various commitment schemes
-pub trait Verifier<'params, Scheme: CommitmentScheme> {
+pub trait Verifier<'params, Scheme: PCS> {
     /// Unfinalized verification result. This is returned in verification
     /// to allow developer to compress or combine verification results
     type Guard: Guard<Scheme, MSMAccumulator = Self::MSMAccumulator>;
@@ -210,7 +231,7 @@ pub trait Verifier<'params, Scheme: CommitmentScheme> {
                 Item = VerifierQuery<
                     'com,
                     Scheme::Curve,
-                    <Scheme::ParamsVerifier as Params<'params, Scheme::Curve>>::MSM,
+                    <Scheme::ParamsVerifier as PCSParams<'params, Scheme::Curve>>::MSM,
                 >,
             > + Clone;
 }

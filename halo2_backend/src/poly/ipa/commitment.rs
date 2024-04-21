@@ -5,7 +5,7 @@
 
 use crate::arithmetic::{g_to_lagrange, parallelize, CurveAffine, CurveExt};
 use crate::helpers::CurveRead;
-use crate::poly::commitment::{Blind, CommitmentScheme, Params, ParamsProver, ParamsVerifier};
+use crate::poly::commitment::{Blind, PCSParams, ParamsProver, ParamsVerifier, PCS};
 use crate::poly::ipa::msm::MSMIPA;
 use crate::poly::{Coeff, LagrangeCoeff, Polynomial};
 
@@ -38,14 +38,14 @@ pub struct IPACommitmentScheme<C: CurveAffine> {
     _marker: PhantomData<C>,
 }
 
-impl<C: CurveAffine> CommitmentScheme for IPACommitmentScheme<C> {
+impl<C: CurveAffine> PCS for IPACommitmentScheme<C> {
     type Scalar = C::ScalarExt;
     type Curve = C;
 
     type ParamsProver = ParamsIPA<C>;
     type ParamsVerifier = ParamsVerifierIPA<C>;
 
-    fn new_params(k: u32) -> Self::ParamsProver {
+    fn setup(k: u32) -> Self::ParamsProver {
         ParamsIPA::new(k)
     }
 
@@ -59,7 +59,7 @@ pub type ParamsVerifierIPA<C> = ParamsIPA<C>;
 
 impl<'params, C: CurveAffine> ParamsVerifier<'params, C> for ParamsIPA<C> {}
 
-impl<'params, C: CurveAffine> Params<'params, C> for ParamsIPA<C> {
+impl<'params, C: CurveAffine> PCSParams<'params, C> for ParamsIPA<C> {
     type MSM = MSMIPA<'params, C>;
 
     fn k(&self) -> u32 {
@@ -237,7 +237,7 @@ impl<'params, C: CurveAffine> ParamsProver<'params, C> for ParamsIPA<C> {
 #[cfg(test)]
 mod test {
     use crate::poly::commitment::ParamsProver;
-    use crate::poly::commitment::{Blind, Params, MSM};
+    use crate::poly::commitment::{Blind, PCSParams, MSM};
     use crate::poly::ipa::commitment::{create_proof_with_engine, verify_proof, ParamsIPA};
     use crate::poly::ipa::msm::MSMIPA;
 
@@ -310,7 +310,7 @@ mod test {
         use halo2_middleware::ff::Field;
         use rand_core::OsRng;
 
-        use super::super::commitment::{Blind, Params};
+        use super::super::commitment::{Blind, PCSParams};
         use crate::arithmetic::eval_polynomial;
         use crate::poly::EvaluationDomain;
         use crate::transcript::{
@@ -326,8 +326,8 @@ mod test {
         let engine = H2cEngine::new();
         let params = ParamsIPA::<EpAffine>::new(K);
         let mut params_buffer = vec![];
-        <ParamsIPA<_> as Params<_>>::write(&params, &mut params_buffer).unwrap();
-        let params: ParamsIPA<EpAffine> = Params::read::<_>(&mut &params_buffer[..]).unwrap();
+        <ParamsIPA<_> as PCSParams<_>>::write(&params, &mut params_buffer).unwrap();
+        let params: ParamsIPA<EpAffine> = PCSParams::read::<_>(&mut &params_buffer[..]).unwrap();
 
         let domain = EvaluationDomain::new(1, K);
 

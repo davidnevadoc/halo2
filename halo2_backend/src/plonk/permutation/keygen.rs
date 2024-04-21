@@ -7,7 +7,7 @@ use crate::{
     arithmetic::{parallelize, CurveAffine},
     plonk::Error,
     poly::{
-        commitment::{Blind, Params},
+        commitment::{Blind, PCSParams},
         EvaluationDomain,
     },
 };
@@ -117,7 +117,7 @@ impl Assembly {
         Ok(())
     }
 
-    pub(crate) fn build_vk<'params, C: CurveAffine, P: Params<'params, C>>(
+    pub(crate) fn build_vk<'params, C: CurveAffine, P: PCSParams<'params, C>>(
         self,
         params: &P,
         domain: &EvaluationDomain<C::Scalar>,
@@ -126,7 +126,7 @@ impl Assembly {
         build_vk(params, domain, p, |i, j| self.mapping[i][j])
     }
 
-    pub(crate) fn build_pk<'params, C: CurveAffine, P: Params<'params, C>>(
+    pub(crate) fn build_pk<'params, C: CurveAffine, P: PCSParams<'params, C>>(
         self,
         params: &P,
         domain: &EvaluationDomain<C::Scalar>,
@@ -136,7 +136,7 @@ impl Assembly {
     }
 }
 
-pub(crate) fn build_pk<'params, C: CurveAffine, P: Params<'params, C>>(
+pub(crate) fn build_pk<'params, C: CurveAffine, P: PCSParams<'params, C>>(
     params: &P,
     domain: &EvaluationDomain<C::Scalar>,
     p: &Argument,
@@ -212,7 +212,7 @@ pub(crate) fn build_pk<'params, C: CurveAffine, P: Params<'params, C>>(
     }
 }
 
-pub(crate) fn build_vk<'params, C: CurveAffine, P: Params<'params, C>>(
+pub(crate) fn build_vk<'params, C: CurveAffine, P: PCSParams<'params, C>>(
     params: &P,
     domain: &EvaluationDomain<C::Scalar>,
     p: &Argument,

@@ -6,7 +6,7 @@ use crate::{
     plonk::circuit::ExpressionBack,
     plonk::{ChallengeGamma, ChallengeTheta, ChallengeX, Error},
     poly::{
-        commitment::{Blind, Params},
+        commitment::{Blind, PCSParams},
         Coeff, EvaluationDomain, LagrangeCoeff, Polynomial, ProverQuery,
     },
     transcript::{EncodedChallenge, TranscriptWrite},
@@ -41,7 +41,7 @@ pub(in crate::plonk) struct Evaluated<C: CurveAffine> {
 /// - constructs A_compressed = \theta^{m-1} A_0 + theta^{m-2} A_1 + ... + \theta A_{m-2} + A_{m-1}
 ///   and S_compressed = \theta^{m-1} S_0 + theta^{m-2} S_1 + ... + \theta S_{m-2} + S_{m-1},
 #[allow(clippy::too_many_arguments)]
-fn shuffle_compress<'a, 'params: 'a, F: WithSmallOrderMulGroup<3>, C, P: Params<'params, C>>(
+fn shuffle_compress<'a, 'params: 'a, F: WithSmallOrderMulGroup<3>, C, P: PCSParams<'params, C>>(
     arg: &Argument<F>,
     pk: &ProvingKey<C>,
     params: &P,
@@ -99,7 +99,7 @@ pub(in crate::plonk) fn shuffle_commit_product<
     'params: 'a,
     F: WithSmallOrderMulGroup<3>,
     C,
-    P: Params<'params, C>,
+    P: PCSParams<'params, C>,
     E: EncodedChallenge<C>,
     R: RngCore,
     T: TranscriptWrite<C, E>,

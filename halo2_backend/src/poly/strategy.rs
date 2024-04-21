@@ -1,15 +1,15 @@
-use super::commitment::{CommitmentScheme, Verifier};
+use super::commitment::{Verifier, PCS};
 use crate::plonk::Error;
 
 /// Guards is unfinished verification result. Implement this to construct various
 /// verification strategies such as aggregation and recursion.
-pub trait Guard<Scheme: CommitmentScheme> {
+pub trait Guard<Scheme: PCS> {
     /// Multi scalar engine which is not evaluated yet.
     type MSMAccumulator;
 }
 
 /// Trait representing a strategy for verifying Halo 2 proofs.
-pub trait VerificationStrategy<'params, Scheme: CommitmentScheme, V: Verifier<'params, Scheme>> {
+pub trait VerificationStrategy<'params, Scheme: PCS, V: Verifier<'params, Scheme>> {
     /// The output type of this verification strategy after processing a proof.
     type Output;
 

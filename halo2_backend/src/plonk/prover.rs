@@ -14,7 +14,7 @@ use crate::plonk::{
     ProvingKey,
 };
 use crate::poly::{
-    commitment::{self, Blind, CommitmentScheme, Params},
+    commitment::{self, Blind, PCSParams, PCS},
     Basis, Coeff, LagrangeCoeff, Polynomial, ProverQuery,
 };
 use crate::transcript::{EncodedChallenge, TranscriptWrite};
@@ -44,7 +44,7 @@ struct AdviceSingle<C: CurveAffine, B: Basis> {
 pub struct ProverSingle<
     'a,
     'params,
-    Scheme: CommitmentScheme,
+    Scheme: PCS,
     P: commitment::Prover<'params, Scheme>,
     E: EncodedChallenge<Scheme::Curve>,
     R: RngCore,
@@ -55,7 +55,7 @@ pub struct ProverSingle<
 impl<
         'a,
         'params,
-        Scheme: CommitmentScheme,
+        Scheme: PCS,
         P: commitment::Prover<'params, Scheme>,
         E: EncodedChallenge<Scheme::Curve>,
         R: RngCore,
@@ -130,7 +130,7 @@ impl<
 pub struct Prover<
     'a,
     'params,
-    Scheme: CommitmentScheme,
+    Scheme: PCS,
     P: commitment::Prover<'params, Scheme>,
     E: EncodedChallenge<Scheme::Curve>,
     R: RngCore,
@@ -162,7 +162,7 @@ pub struct Prover<
 impl<
         'a,
         'params,
-        Scheme: CommitmentScheme,
+        Scheme: PCS,
         P: commitment::Prover<'params, Scheme>,
         E: EncodedChallenge<Scheme::Curve>,
         R: RngCore,
